@@ -45,7 +45,7 @@ const Home = () => {
 
     try {
       const res = await axios
-        .post("http://localhost:8000/analyze/", formdata, {
+        .post("http://localhost:8000/analyze", formdata, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
