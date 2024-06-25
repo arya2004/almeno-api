@@ -4,21 +4,20 @@ import {
   Box,
   Button,
   Center,
-  Container,
   Flex,
   Image,
   FormControl,
   FormHelperText,
   FormLabel,
-  Heading,
   Input,
-  List,
-  ListItem,
-  OrderedList,
-  Text,
   useToast,
+  Heading,
+  Text,
+  Divider,
+  VStack,
+  HStack,
 } from "@chakra-ui/react";
-import { Form } from "react-router-dom";
+
 const Home = () => {
   const [img, setimg] = useState(null);
   const [data, setData] = useState(null);
@@ -27,6 +26,7 @@ const Home = () => {
   const [imgURL, setimgURL] = useState("");
 
   const toast = useToast();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (img == null) {
@@ -34,49 +34,37 @@ const Home = () => {
         position: "bottom-right",
         render: () => (
           <Box color="white" p={3} bg="red.500">
-            Upload a strip image before Analysing !
+            Upload a strip image before Analysing!
           </Box>
         ),
       });
+      return;
     }
 
     const formdata = new FormData();
     formdata.append("file", img, img.name);
 
     try {
-      const res = await axios
-        .post("http://localhost:8000/analyze", formdata, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then((res) => {
-          console.log("JSON RESPONSE");
-          console.log(res.data);
-          if (res.status == 200) {
-            setData(res.data);
-            setloaded(true);
-            setStrip(Object.values(res.data));
-          } else {
-            toast({
-              position: "bottom-right",
-              render: () => (
-                <Box color="white" p={3} bg="red.500">
-                  Sorry ! could not proccess that request , Internal Server
-                  Error
-                </Box>
-              ),
-            });
-          }
-        });
+      const res = await axios.post("http://localhost:8000/analyze", formdata, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.status === 200) {
+        setData(res.data);
+        setloaded(true);
+        setStrip(Object.values(res.data));
+      } else {
+        throw new Error("Internal Server Error");
+      }
     } catch (err) {
       console.log(err);
       toast({
         position: "bottom-right",
         render: () => (
           <Box color="white" p={3} bg="red.500">
-            Sorry ! could not proccess that request , Internal Server
-            Error
+            Sorry! Could not process that request, Internal Server Error
           </Box>
         ),
       });
@@ -93,20 +81,22 @@ const Home = () => {
     setloaded(false);
     setimgURL(URL.createObjectURL(img));
   };
+
   const jsonList = () => {
     if (loaded) {
-      const renderList = [];
-      Object.keys(data).forEach((key, i) => {
+      return Object.keys(data).map((key, i) => {
         let val = data[key];
-        renderList.push(
-          <span key={i}> {key} : [{val[0]},{val[1]},{val[2]}] ,</span>
+        return (
+          <Text key={i} fontSize="md">
+            {key}: [{val[0]},{val[1]},{val[2]}]
+          </Text>
         );
       });
-      return (renderList);
     } else {
       return <></>;
     }
   };
+
   function componentToHex(c) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
@@ -123,106 +113,117 @@ const Home = () => {
 
   const stripBuilder = () => {
     if (loaded) {
-      const render_strip = [];
-      strip.forEach((element,i) => {
+      return strip.map((element, i) => {
         const color = rgbToHex(element);
-        render_strip.push(
-          <Center key={i}
+        return (
+          <Center
+            key={i}
             margin="0"
             padding="0"
             width="50px"
             height="50px"
             bg={color}
-          ></Center>
-        );
-        render_strip.push(
-          <Center key={i+100}
-            margin="0"
-            padding="0"
-            width="2px"
-            height="50px"
-            bg="blackAlpha.100"
+            border="1px solid #ddd"
           ></Center>
         );
       });
-
-      return render_strip;
     } else {
       return (
         <Center>
-          <h4>Color Strip</h4>
+          <Text fontSize="lg" color="gray.500">
+            Color Strip
+          </Text>
         </Center>
       );
     }
   };
+
   return (
     <>
-      <div>
-        <h1>Urine Strip Analyzer</h1>
-      </div>
+      <Box bg="blue.800" color="white" p={5} textAlign="center">
+        <Heading>Urine Strip Analyzer</Heading>
+      </Box>
       <Box width="95vw" ml="auto" mr="auto" mt="2rem">
-        <Flex direction="row" justifyContent="space-between">
+        <Flex direction="column" alignItems="center">
           <Flex
-            height="65vh"
             direction="column"
+            alignItems="center"
             padding="2rem"
-            bg="gray.800"
+            bg="gray.700"
             border="2px solid white"
-            borderRadius="10"
-            flex="1"
+            borderRadius="10px"
+            width="full"
+            maxWidth="600px"
           >
             <Center>
-              {imgURL == "" ? (
-                <h4>Upload ⬆️</h4>
+              {imgURL === "" ? (
+                <Text fontSize="lg" color="gray.300">
+                  Upload ⬆️
+                </Text>
               ) : (
                 <Image
                   boxSize="300px"
                   objectFit="contain"
                   src={imgURL}
                   alt="strip image"
+                  borderRadius="10px"
                 />
               )}
             </Center>
           </Flex>
 
-          <Flex direction="column" flex="3" ml="6rem" alignItems="center">
-            <Box width="40vw">
-              <FormControl mb="0.5rem" isRequired="true">
-                <FormLabel>Input the image of the test strip</FormLabel>
-                <Input
-                  onChange={handleImgChange}
-                  type="file"
-                  accept=".jpg"
-                ></Input>
-                <FormHelperText>In .JPG format</FormHelperText>
-              </FormControl>
-              <Button
-                type="submit"
-                onClick={handleSubmit}
-                width="20vw"
-                bg="blue.700"
-              >
-                Analyze!
-              </Button>
-            </Box>
-            <Flex
-              width="100%"
-              direction="row"
-              justifyContent="center"
-              alignItems="center"
-              mt="1rem"
-              padding="2rem"
-              bg="gray.800"
-              border="2px solid white"
-              borderRadius="10"
+          <VStack spacing={5} mt={8} width="full" maxWidth="600px">
+            <FormControl isRequired>
+              <FormLabel color="gray.700">Input the image of the test strip</FormLabel>
+              <Input onChange={handleImgChange} type="file" accept=".jpg" />
+              <FormHelperText color="gray.500">In .JPG format</FormHelperText>
+            </FormControl>
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              width="full"
+              bg="blue.700"
+              color="white"
+              _hover={{ bg: "blue.800" }}
             >
+              Analyze!
+            </Button>
+          </VStack>
+
+          <Box
+            width="full"
+            maxWidth="600px"
+            mt="2rem"
+            p="2rem"
+            bg="gray.700"
+            border="2px solid white"
+            borderRadius="10px"
+          >
+            <Center mb={4}>
+              <Heading as="h4" size="md" color="white">
+                Color Strip
+              </Heading>
+            </Center>
+            <HStack justifyContent="center" spacing={1}>
               {stripBuilder()}
-            </Flex>
-            <Box mt="1rem" width="60vw">
-              <h3>JSON Ouput</h3>
-              {jsonList()}
-            </Box>
-          </Flex>
+            </HStack>
+          </Box>
+
+          <Box
+            width="full"
+            maxWidth="600px"
+            mt="2rem"
+            p="2rem"
+            bg="gray.700"
+            border="2px solid white"
+            borderRadius="10px"
+          >
+            <Heading as="h4" size="md" color="white" mb={4}>
+              JSON Output
+            </Heading>
+            <Divider mb={4} />
+            <Box color="white">{jsonList()}</Box>
+          </Box>
         </Flex>
       </Box>
     </>
